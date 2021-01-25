@@ -465,8 +465,8 @@ def main():
 
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        warmup_steps=args.warmup_proportion * num_train_optimization_steps,
-        t_total=num_train_optimization_steps,
+        num_warmup_steps=args.warmup_proportion * num_train_optimization_steps,
+        num_training_steps=num_train_optimization_steps,
     )
 
     startIterID = 0
