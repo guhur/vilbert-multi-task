@@ -22,4 +22,4 @@ scores = [10, 20, 30, 40, 50, 50, 50, 50, 49, 48, 50, 51, 52, 52, 52, 52, 52]
 
 for s in scores:
     controller.step(s)
-    print(s, controller.in_stop)
+    print((s, controller.in_stop))

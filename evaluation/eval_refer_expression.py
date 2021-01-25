@@ -236,7 +236,7 @@ def main():
     else:
         model = MultiModalBertForReferExpression(config, dropout_prob=0.2)
 
-    print("loading model from %s" % (args.pretrained_weight))
+    print(("loading model from %s" % (args.pretrained_weight)))
     checkpoint = torch.load(args.pretrained_weight)
     model.load_state_dict(checkpoint)
 
@@ -280,9 +280,15 @@ def evaluate(args, model, dataloader):
 
     for batch in dataloader:
         batch = tuple(t.cuda() for t in batch)
-        features, spatials, image_mask, captions, target, input_mask, segment_ids = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            captions,
+            target,
+            input_mask,
+            segment_ids,
+        ) = batch
         with torch.no_grad():
             logits = model(
                 captions, features, spatials, segment_ids, input_mask, image_mask

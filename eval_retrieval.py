@@ -208,11 +208,17 @@ def main():
     if default_gpu and not os.path.exists(savePath):
         os.makedirs(savePath)
 
-    task_batch_size, task_num_iters, task_ids, task_datasets_val, task_dataloader_val = LoadDatasetEval(
-        args, task_cfg, args.tasks.split("-")
-    )
+    (
+        task_batch_size,
+        task_num_iters,
+        task_ids,
+        task_datasets_val,
+        task_dataloader_val,
+    ) = LoadDatasetEval(args, task_cfg, args.tasks.split("-"))
 
-    num_labels = max([dataset.num_labels for dataset in task_datasets_val.values()])
+    num_labels = max(
+        [dataset.num_labels for dataset in list(task_datasets_val.values())]
+    )
 
     if args.task_specific_tokens:
         config.task_specific_tokens = True
@@ -247,8 +253,8 @@ def main():
     no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
 
     print("***** Running training *****")
-    print("  Num Iters: ", task_num_iters)
-    print("  Batch size: ", task_batch_size)
+    print(("  Num Iters: ", task_num_iters))
+    print(("  Batch size: ", task_batch_size))
 
     model.eval()
     # when run evaluate, we run each task sequentially.
@@ -263,9 +269,17 @@ def main():
 
         for i, batch in enumerate(task_dataloader_val[task_id]):
             batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
-            features, spatials, image_mask, question, input_mask, segment_ids, target, caption_idx, image_idx = (
-                batch
-            )
+            (
+                features,
+                spatials,
+                image_mask,
+                question,
+                input_mask,
+                segment_ids,
+                target,
+                caption_idx,
+                image_idx,
+            ) = batch
             task_tokens = (
                 question.new().resize_(question.size(0), 1).fill_(int(task_id[4:]))
             )
@@ -330,8 +344,10 @@ def main():
                     medr = np.floor(np.median(rank_matrix_tmp) + 1)
                     meanr = np.mean(rank_matrix_tmp) + 1
                     print(
-                        "%d Final r1:%.3f, r5:%.3f, r10:%.3f, mder:%.3f, meanr:%.3f"
-                        % (count, r1, r5, r10, medr, meanr)
+                        (
+                            "%d Final r1:%.3f, r5:%.3f, r10:%.3f, mder:%.3f, meanr:%.3f"
+                            % (count, r1, r5, r10, medr, meanr)
+                        )
                     )
 
                     results.append(np.argsort(-score_matrix[caption_idx]).tolist()[:20])
@@ -346,8 +362,10 @@ def main():
 
         print("************************************************")
         print(
-            "Final r1:%.3f, r5:%.3f, r10:%.3f, mder:%.3f, meanr:%.3f"
-            % (r1, r5, r10, medr, meanr)
+            (
+                "Final r1:%.3f, r5:%.3f, r10:%.3f, mder:%.3f, meanr:%.3f"
+                % (r1, r5, r10, medr, meanr)
+            )
         )
         print("************************************************")
 

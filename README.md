@@ -48,6 +48,12 @@ conda install pytorch torchvision cudatoolkit=10.0 -c pytorch
 python setup.py develop
 ```
 
+5. Install REFER:
+```text
+cd tools/refer
+make
+```
+
 ## Data Setup
 
 Check `README.md` under `data` for more details.  

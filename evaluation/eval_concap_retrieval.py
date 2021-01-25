@@ -316,9 +316,19 @@ def evaluate(args, model, dataloader):
     model.eval()
     for batch in tqdm(iter(dataloader)):
         batch = tuple(t.cuda() for t in batch)
-        features, spatials, image_mask, caption, input_mask, segment_ids, target, caption_idx, image_idx, image_id, caption = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            caption,
+            input_mask,
+            segment_ids,
+            target,
+            caption_idx,
+            image_idx,
+            image_id,
+            caption,
+        ) = batch
         with torch.no_grad():
             _, _, logit, _ = model(
                 caption, features, spatials, segment_ids, input_mask, image_mask

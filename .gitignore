@@ -47,3 +47,5 @@ checkpoints/
 # virtualenv
 venv/
 ENV/
+airbnb
+airbnb_listing.*

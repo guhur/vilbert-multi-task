@@ -217,9 +217,13 @@ def main():
     if default_gpu and not os.path.exists(savePath):
         os.makedirs(savePath)
 
-    task_batch_size, task_num_iters, task_ids, task_datasets_val, task_dataloader_val = LoadDatasetEval(
-        args, task_cfg, args.tasks.split("-")
-    )
+    (
+        task_batch_size,
+        task_num_iters,
+        task_ids,
+        task_datasets_val,
+        task_dataloader_val,
+    ) = LoadDatasetEval(args, task_cfg, args.tasks.split("-"))
 
     tbLogger = utils.tbLogger(
         timeStamp,
@@ -231,7 +235,9 @@ def main():
         save_logger=False,
         txt_name="eval.txt",
     )
-    num_labels = max([dataset.num_labels for dataset in task_datasets_val.values()])
+    num_labels = max(
+        [dataset.num_labels for dataset in list(task_datasets_val.values())]
+    )
 
     if args.dynamic_attention:
         config.dynamic_attention = True
@@ -278,8 +284,8 @@ def main():
         model = nn.DataParallel(model)
 
     print("***** Running evaluation *****")
-    print("  Num Iters: ", task_num_iters)
-    print("  Batch size: ", task_batch_size)
+    print(("  Num Iters: ", task_num_iters))
+    print(("  Batch size: ", task_batch_size))
 
     model.eval()
     # when run evaluate, we run each task sequentially.

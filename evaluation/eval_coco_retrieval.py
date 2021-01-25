@@ -345,9 +345,17 @@ def evaluate(args, model, dataloader):
     model.eval()
     for batch in tqdm(iter(dataloader)):
         batch = tuple(t.cuda() for t in batch)
-        features, spatials, image_mask, caption, input_mask, segment_ids, target, caption_idx, image_idx = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            caption,
+            input_mask,
+            segment_ids,
+            target,
+            caption_idx,
+            image_idx,
+        ) = batch
 
         features = features.squeeze(0)
         spatials = spatials.squeeze(0)
