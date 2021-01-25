@@ -25,7 +25,7 @@ class ConceptCapLoaderTrain(RNGDataFlow):
         lmdb_file = "/srv/share/vgoswami8/conceptual_captions/training_feat_all.lmdb"
 
         caption_path = "/srv/share/vgoswami8/conceptual_captions/caption_train.json"
-        print("Loading from %s" % lmdb_file)
+        print(("Loading from %s" % lmdb_file))
         ds = td.LMDBSerializer.load(lmdb_file, shuffle=False)
         self.num_dataset = int(len(ds) / num_split) + 1
         ds = td.PrefetchDataZMQ(ds, nr_proc=1)

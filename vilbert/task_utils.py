@@ -16,8 +16,8 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from pytorch_transformers.tokenization_bert import BertTokenizer
-from vilbert.datasets import DatasetMapTrain, DatasetMapEval
-from vilbert.datasets._image_features_reader import ImageFeaturesH5Reader
+from .vilbert.datasets import DatasetMapTrain, DatasetMapEval
+from .vilbert.datasets._image_features_reader import ImageFeaturesH5Reader
 import pdb
 
 logger = logging.getLogger(__name__)
@@ -32,13 +32,30 @@ def ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
     batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
 
     if task_id == "TASK4" or task_id == "TASK17":
-        features, spatials, image_mask, question, target, input_mask, segment_ids, multiple_choice_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            multiple_choice_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
     else:
-        features, spatials, image_mask, question, target, input_mask, segment_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
 
     batch_size = features.size(0)
     if task_cfg[task_id]["process"] in ["expand"]:
@@ -107,7 +124,18 @@ def ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
 
     task_tokens = question.new().resize_(question.size(0), 1).fill_(int(task_id[4:]))
 
-    vil_prediction, vil_prediction_gqa, vil_logit, vil_binary_prediction, vil_tri_prediction, vision_prediction, vision_logit, linguisic_prediction, linguisic_logit, _ = model(
+    (
+        vil_prediction,
+        vil_prediction_gqa,
+        vil_logit,
+        vil_binary_prediction,
+        vil_tri_prediction,
+        vision_prediction,
+        vision_logit,
+        linguisic_prediction,
+        linguisic_logit,
+        _,
+    ) = model(
         question,
         features,
         spatials,
@@ -183,17 +211,34 @@ def ForwardModelsTrain(
 
     task_count[task_id] += 1
     # get the batch
-    batch = task_iter_train[task_id].next()
+    batch = next(task_iter_train[task_id])
     batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
 
     if task_id == "TASK4" or task_id == "TASK17":
-        features, spatials, image_mask, question, target, input_mask, segment_ids, multiple_choice_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            multiple_choice_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
     else:
-        features, spatials, image_mask, question, target, input_mask, segment_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
 
     batch_size = features.size(0)
     if task_cfg[task_id]["process"] in ["dialog"]:
@@ -310,7 +355,18 @@ def ForwardModelsTrain(
         )
 
     task_tokens = question.new().resize_(question.size(0), 1).fill_(int(task_id[4:]))
-    vil_prediction, vil_prediction_gqa, vil_logit, vil_binary_prediction, vil_tri_prediction, vision_prediction, vision_logit, linguisic_prediction, linguisic_logit, _ = model(
+    (
+        vil_prediction,
+        vil_prediction_gqa,
+        vil_logit,
+        vil_binary_prediction,
+        vil_tri_prediction,
+        vision_prediction,
+        vision_logit,
+        linguisic_prediction,
+        linguisic_logit,
+        _,
+    ) = model(
         question,
         features,
         spatials,
@@ -407,12 +463,12 @@ def LoadDatasets(args, task_cfg, ids, split="trainval"):
             task_feature_reader2[task_cfg[task]["features_h5path2"]] = None
 
     # initilzie the feature reader
-    for features_h5path in task_feature_reader1.keys():
+    for features_h5path in list(task_feature_reader1.keys()):
         if features_h5path != "":
             task_feature_reader1[features_h5path] = ImageFeaturesH5Reader(
                 features_h5path, args.in_memory
             )
-    for features_h5path in task_feature_reader2.keys():
+    for features_h5path in list(task_feature_reader2.keys()):
         if features_h5path != "":
             task_feature_reader2[features_h5path] = ImageFeaturesH5Reader(
                 features_h5path, args.in_memory
@@ -539,13 +595,13 @@ def LoadDatasetEval(args, task_cfg, ids):
             task_feature_reader2[task_cfg[task]["features_h5path2"]] = None
 
     # initilzie the feature reader
-    for features_h5path in task_feature_reader1.keys():
+    for features_h5path in list(task_feature_reader1.keys()):
         if features_h5path != "":
             task_feature_reader1[features_h5path] = ImageFeaturesH5Reader(
                 features_h5path, args.in_memory
             )
 
-    for features_h5path in task_feature_reader2.keys():
+    for features_h5path in list(task_feature_reader2.keys()):
         if features_h5path != "":
             task_feature_reader2[features_h5path] = ImageFeaturesH5Reader(
                 features_h5path, args.in_memory
@@ -638,13 +694,30 @@ def EvaluatingModel(
     batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
 
     if task_id == "TASK4" or task_id == "TASK17":
-        features, spatials, image_mask, question, target, input_mask, segment_ids, multiple_choice_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            multiple_choice_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
     else:
-        features, spatials, image_mask, question, target, input_mask, segment_ids, co_attention_mask, question_id = (
-            batch
-        )
+        (
+            features,
+            spatials,
+            image_mask,
+            question,
+            target,
+            input_mask,
+            segment_ids,
+            co_attention_mask,
+            question_id,
+        ) = batch
     batch_size = features.size(0)
 
     if task_cfg[task_id]["process"] in ["dialog"]:
@@ -763,7 +836,18 @@ def EvaluatingModel(
     task_tokens = question.new().resize_(question.size(0), 1).fill_(int(task_id[4:]))
 
     with torch.no_grad():
-        vil_prediction, vil_prediction_gqa, vil_logit, vil_binary_prediction, vil_tri_prediction, vision_prediction, vision_logit, linguisic_prediction, linguisic_logit, _ = model(
+        (
+            vil_prediction,
+            vil_prediction_gqa,
+            vil_logit,
+            vil_binary_prediction,
+            vil_tri_prediction,
+            vision_prediction,
+            vision_logit,
+            linguisic_prediction,
+            linguisic_logit,
+            _,
+        ) = model(
             question,
             features,
             spatials,

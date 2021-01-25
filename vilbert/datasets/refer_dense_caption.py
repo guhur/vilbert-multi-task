@@ -124,7 +124,7 @@ class ReferDenseCpationDataset(Dataset):
             self.tensorize()
             cPickle.dump(self.entries, open(cache_path, "wb"))
         else:
-            print("loading entries from %s" % (cache_path))
+            print(("loading entries from %s" % (cache_path)))
             self.entries = cPickle.load(open(cache_path, "rb"))
 
     def _load_annotations(self, annotations_jsonpath):

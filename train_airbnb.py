@@ -9,25 +9,19 @@ import logging
 import os
 import random
 from io import open
-import math
 import sys
 
-from time import gmtime, strftime
-from timeit import default_timer as timer
 
 import numpy as np
 from tqdm import tqdm, trange
 
 import torch
-from torch.utils.data import DataLoader, Dataset, RandomSampler
-from torch.utils.data.distributed import DistributedSampler
-from tensorboardX import SummaryWriter
 
-from pytorch_transformers.tokenization_bert import BertTokenizer
-from pytorch_transformers.optimization import AdamW, WarmupLinearSchedule
+from transformers import BertTokenizer
+from transformers import AdamW, get_linear_schedule_with_warmup
 
 import vilbert.utils as utils
-from vilbert.datasets import ConceptCapLoaderTrain, ConceptCapLoaderVal
+from vilbert.datasets.airbnb_dataset import AirbnbLoaderTrain, AirbnbLoaderVal
 from vilbert.vilbert import BertForMultiModalPreTraining, BertConfig
 import torch.distributed as dist
 
@@ -46,7 +40,7 @@ def main():
     # Required parameters
     parser.add_argument(
         "--file_path",
-        default="data/conceptual_caption/",
+        default="data/airbnb/",
         type=str,
         help="The input train corpus.",
     )
@@ -307,7 +301,7 @@ def main():
         args.bert_model, do_lower_case=args.do_lower_case
     )
     num_train_optimization_steps = None
-    train_dataset = ConceptCapLoaderTrain(
+    train_dataset = AirbnbLoaderTrain(
         args.file_path,
         tokenizer,
         args.bert_model,
@@ -320,7 +314,7 @@ def main():
         cache=cache,
     )
 
-    validation_dataset = ConceptCapLoaderVal(
+    validation_dataset = AirbnbLoaderVal(
         args.file_path,
         tokenizer,
         args.bert_model,
@@ -469,7 +463,7 @@ def main():
             betas=(0.9, 0.98),
         )
 
-    scheduler = WarmupLinearSchedule(
+    scheduler = get_linear_schedule_with_warmup(
         optimizer,
         warmup_steps=args.warmup_proportion * num_train_optimization_steps,
         t_total=num_train_optimization_steps,

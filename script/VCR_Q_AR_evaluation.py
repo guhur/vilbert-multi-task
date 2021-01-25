@@ -11,7 +11,7 @@ import sys
 import json_lines
 
 
-print(sys.argv)
+print((sys.argv))
 
 json_path_1 = sys.argv[1]
 json_path_2 = sys.argv[2]
@@ -60,6 +60,6 @@ Q_A_accuracy = Q_A_accuracy / float(num)
 QA_R_accuracy = QA_R_accuracy / float(num)
 Q_AR_accuracy = Q_AR_accuracy / float(num)
 
-print("Q_A_accuracy: %f" % Q_A_accuracy)
-print("QA_R_accuracy: %f" % QA_R_accuracy)
-print("Q_AR_accuracy: %f" % Q_AR_accuracy)
+print(("Q_A_accuracy: %f" % Q_A_accuracy))
+print(("QA_R_accuracy: %f" % QA_R_accuracy))
+print(("Q_AR_accuracy: %f" % Q_AR_accuracy))

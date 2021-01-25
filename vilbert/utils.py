@@ -454,22 +454,18 @@ class tbLogger(object):
         for task_id in self.task_ids:
             if self.task_num_iters[task_id] > 0:
                 if self.task_step_tmp[task_id]:
-                    lossInfo += (
-                        "[%s]: iter %d Ep: %.2f masked_t %.3f masked_v %.3f NSP %.3f lr %.6g"
-                        % (
-                            self.task_id2name[task_id],
-                            self.task_step[task_id],
-                            self.task_step[task_id]
-                            / float(self.task_num_iters[task_id]),
-                            self.masked_t_loss[task_id]
-                            / float(self.task_step_tmp[task_id]),
-                            self.masked_v_loss[task_id]
-                            / float(self.task_step_tmp[task_id]),
-                            self.next_sentense_loss[task_id]
-                            / float(self.task_step_tmp[task_id]),
-                            self.task_norm_tmp[task_id]
-                            / float(self.task_step_tmp[task_id]),
-                        )
+                    lossInfo += "[%s]: iter %d Ep: %.2f masked_t %.3f masked_v %.3f NSP %.3f lr %.6g" % (
+                        self.task_id2name[task_id],
+                        self.task_step[task_id],
+                        self.task_step[task_id] / float(self.task_num_iters[task_id]),
+                        self.masked_t_loss[task_id]
+                        / float(self.task_step_tmp[task_id]),
+                        self.masked_v_loss[task_id]
+                        / float(self.task_step_tmp[task_id]),
+                        self.next_sentense_loss[task_id]
+                        / float(self.task_step_tmp[task_id]),
+                        self.task_norm_tmp[task_id]
+                        / float(self.task_step_tmp[task_id]),
                     )
 
         logger.info(lossInfo)
@@ -701,17 +697,17 @@ def get_file_extension(path, dot=True, lower=True):
 
 
 class PreTrainedModel(nn.Module):
-    r""" Base class for all models.
-        :class:`~pytorch_transformers.PreTrainedModel` takes care of storing the configuration of the models and handles methods for loading/downloading/saving models
-        as well as a few methods commons to all models to (i) resize the input embeddings and (ii) prune heads in the self-attention heads.
-        Class attributes (overridden by derived classes):
-            - ``config_class``: a class derived from :class:`~pytorch_transformers.PretrainedConfig` to use as configuration class for this model architecture.
-            - ``pretrained_model_archive_map``: a python ``dict`` of with `short-cut-names` (string) as keys and `url` (string) of associated pretrained weights as values.
-            - ``load_tf_weights``: a python ``method`` for loading a TensorFlow checkpoint in a PyTorch model, taking as arguments:
-                - ``model``: an instance of the relevant subclass of :class:`~pytorch_transformers.PreTrainedModel`,
-                - ``config``: an instance of the relevant subclass of :class:`~pytorch_transformers.PretrainedConfig`,
-                - ``path``: a path (string) to the TensorFlow checkpoint.
-            - ``base_model_prefix``: a string indicating the attribute associated to the base model in derived classes of the same architecture adding modules on top of the base model.
+    r"""Base class for all models.
+    :class:`~pytorch_transformers.PreTrainedModel` takes care of storing the configuration of the models and handles methods for loading/downloading/saving models
+    as well as a few methods commons to all models to (i) resize the input embeddings and (ii) prune heads in the self-attention heads.
+    Class attributes (overridden by derived classes):
+        - ``config_class``: a class derived from :class:`~pytorch_transformers.PretrainedConfig` to use as configuration class for this model architecture.
+        - ``pretrained_model_archive_map``: a python ``dict`` of with `short-cut-names` (string) as keys and `url` (string) of associated pretrained weights as values.
+        - ``load_tf_weights``: a python ``method`` for loading a TensorFlow checkpoint in a PyTorch model, taking as arguments:
+            - ``model``: an instance of the relevant subclass of :class:`~pytorch_transformers.PreTrainedModel`,
+            - ``config``: an instance of the relevant subclass of :class:`~pytorch_transformers.PretrainedConfig`,
+            - ``path``: a path (string) to the TensorFlow checkpoint.
+        - ``base_model_prefix``: a string indicating the attribute associated to the base model in derived classes of the same architecture adding modules on top of the base model.
     """
     config_class = None
     pretrained_model_archive_map = {}
@@ -731,7 +727,7 @@ class PreTrainedModel(nn.Module):
         self.config = config
 
     def _get_resized_embeddings(self, old_embeddings, new_num_tokens=None):
-        """ Build a resized Embedding Module from a provided token Embedding Module.
+        """Build a resized Embedding Module from a provided token Embedding Module.
             Increasing the size will add newly initialized vectors at the end
             Reducing the size will remove vectors from the end
         Args:
@@ -766,17 +762,16 @@ class PreTrainedModel(nn.Module):
         return new_embeddings
 
     def _tie_or_clone_weights(self, first_module, second_module):
-        """ Tie or clone module weights depending of weither we are using TorchScript or not
-        """
+        """Tie or clone module weights depending of weither we are using TorchScript or not"""
         # TODO: igore torch script here
         first_module.weight = second_module.weight
 
     def resize_token_embeddings(self, new_num_tokens=None):
-        """ Resize input token embeddings matrix of the model if new_num_tokens != config.vocab_size.
+        """Resize input token embeddings matrix of the model if new_num_tokens != config.vocab_size.
         Take care of tying weights embeddings afterwards if the model class has a `tie_weights()` method.
         Arguments:
             new_num_tokens: (`optional`) int:
-                New number of tokens in the embedding matrix. Increasing the size will add newly initialized vectors at the end. Reducing the size will remove vectors from the end. 
+                New number of tokens in the embedding matrix. Increasing the size will add newly initialized vectors at the end. Reducing the size will remove vectors from the end.
                 If not provided or None: does nothing and just returns a pointer to the input tokens ``torch.nn.Embeddings`` Module of the model.
         Return: ``torch.nn.Embeddings``
             Pointer to the input tokens Embeddings Module of the model
@@ -799,9 +794,9 @@ class PreTrainedModel(nn.Module):
         return model_embeds
 
     def prune_heads(self, heads_to_prune):
-        """ Prunes heads of the base model.
-            Arguments:
-                heads_to_prune: dict with keys being selected layer indices (`int`) and associated values being the list of heads to prune in said layer (list of `int`).
+        """Prunes heads of the base model.
+        Arguments:
+            heads_to_prune: dict with keys being selected layer indices (`int`) and associated values being the list of heads to prune in said layer (list of `int`).
         """
         base_model = getattr(
             self, self.base_model_prefix, self
@@ -809,8 +804,8 @@ class PreTrainedModel(nn.Module):
         base_model._prune_heads(heads_to_prune)
 
     def save_pretrained(self, save_directory):
-        """ Save a model and its configuration file to a directory, so that it
-            can be re-loaded using the `:func:`~pytorch_transformers.PreTrainedModel.from_pretrained`` class method.
+        """Save a model and its configuration file to a directory, so that it
+        can be re-loaded using the `:func:`~pytorch_transformers.PreTrainedModel.from_pretrained`` class method.
         """
         assert os.path.isdir(
             save_directory

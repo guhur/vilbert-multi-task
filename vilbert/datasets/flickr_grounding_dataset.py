@@ -65,7 +65,7 @@ def get_sentence_data(fn):
     Parses a sentence file from the Flickr30K Entities dataset
     input:
       fn - full file path to the sentence file to parse
-    
+
     output:
       a list of dictionaries for each sentence with the following fields:
           sentence - the original sentence
@@ -75,7 +75,7 @@ def get_sentence_data(fn):
                       first_word_index - the position of the first word of
                                          the phrase in the sentence
                       phrase_id - an identifier for this phrase
-                      phrase_type - a list of the coarse categories this 
+                      phrase_type - a list of the coarse categories this
                                     phrase belongs to
     """
     with open(fn, "r") as f:
@@ -145,7 +145,7 @@ def get_annotations(fn):
           nobox - list of identifiers which were annotated as
                   not being visible in the image
           boxes - a dictionary where the fields are identifiers
-                  and the values are its list of boxes in the 
+                  and the values are its list of boxes in the
                   [xmin ymin xmax ymax] format
     """
     tree = ET.parse(fn)
@@ -246,7 +246,7 @@ class FlickrGroundingDataset(Dataset):
             self.tensorize()
             cPickle.dump(self.entries, open(cache_path, "wb"))
         else:
-            print("loading entries from %s" % (cache_path))
+            print(("loading entries from %s" % (cache_path)))
             self.entries = cPickle.load(open(cache_path, "rb"))
 
     def _load_annotations(self, clean_datasets):
@@ -283,7 +283,7 @@ class FlickrGroundingDataset(Dataset):
 
             for i, sent in enumerate(sentences):
                 for phrase in sent["phrases"]:
-                    if str(phrase["phrase_id"]) in annotation["boxes"].keys():
+                    if str(phrase["phrase_id"]) in list(annotation["boxes"].keys()):
                         entries.append(
                             {
                                 "caption": phrase["phrase"],
@@ -357,9 +357,12 @@ class FlickrGroundingDataset(Dataset):
         features = features[:num_boxes]
 
         if self.split == "train":
-            gt_features, gt_num_boxes, gt_boxes, gt_boxes_ori = self._gt_image_features_reader[
-                image_id
-            ]
+            (
+                gt_features,
+                gt_num_boxes,
+                gt_boxes,
+                gt_boxes_ori,
+            ) = self._gt_image_features_reader[image_id]
 
             # merge two boxes, and assign the labels.
             gt_boxes_ori = gt_boxes_ori[1:gt_num_boxes]

@@ -46,8 +46,7 @@ BERT_PRETRAINED_MODEL_ARCHIVE_MAP = {
 
 
 def load_tf_weights_in_bert(model, tf_checkpoint_path):
-    """ Load tf checkpoints in a pytorch model
-    """
+    """Load tf checkpoints in a pytorch model"""
     try:
         import re
         import numpy as np
@@ -59,13 +58,13 @@ def load_tf_weights_in_bert(model, tf_checkpoint_path):
         )
         raise
     tf_path = os.path.abspath(tf_checkpoint_path)
-    print("Converting TensorFlow checkpoint from {}".format(tf_path))
+    print(("Converting TensorFlow checkpoint from {}".format(tf_path)))
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
     names = []
     arrays = []
     for name, shape in init_vars:
-        print("Loading TF weight {} with shape {}".format(name, shape))
+        print(("Loading TF weight {} with shape {}".format(name, shape)))
         array = tf.train.load_variable(tf_path, name)
         names.append(name)
         arrays.append(array)
@@ -75,7 +74,7 @@ def load_tf_weights_in_bert(model, tf_checkpoint_path):
         # adam_v and adam_m are variables used in AdamWeightDecayOptimizer to calculated m and v
         # which are not required for using pretrained model
         if any(n in ["adam_v", "adam_m"] for n in name):
-            print("Skipping {}".format("/".join(name)))
+            print(("Skipping {}".format("/".join(name))))
             continue
         pointer = model
         for m_name in name:
@@ -103,25 +102,25 @@ def load_tf_weights_in_bert(model, tf_checkpoint_path):
         except AssertionError as e:
             e.args += (pointer.shape, array.shape)
             raise
-        print("Initialize PyTorch weight {}".format(name))
+        print(("Initialize PyTorch weight {}".format(name)))
         pointer.data = torch.from_numpy(array)
     return model
 
 
 def gelu(x):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+    0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    Also see https://arxiv.org/abs/1606.08415
     """
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
 class GeLU(nn.Module):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+    0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    Also see https://arxiv.org/abs/1606.08415
     """
 
     def __init__(self):
@@ -139,8 +138,7 @@ ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish}
 
 
 class BertConfig(object):
-    """Configuration class to store the configuration of a `BertModel`.
-    """
+    """Configuration class to store the configuration of a `BertModel`."""
 
     def __init__(
         self,
@@ -213,12 +211,11 @@ class BertConfig(object):
         assert max(t_biattention_id) < num_hidden_layers
 
         if isinstance(vocab_size_or_config_json_file, str) or (
-            sys.version_info[0] == 2
-            and isinstance(vocab_size_or_config_json_file, unicode)
+            sys.version_info[0] == 2 and isinstance(vocab_size_or_config_json_file, str)
         ):
             with open(vocab_size_or_config_json_file, "r", encoding="utf-8") as reader:
                 json_config = json.loads(reader.read())
-            for key, value in json_config.items():
+            for key, value in list(json_config.items()):
                 self.__dict__[key] = value
         elif isinstance(vocab_size_or_config_json_file, int):
             self.vocab_size = vocab_size_or_config_json_file
@@ -270,7 +267,7 @@ class BertConfig(object):
     def from_dict(cls, json_object):
         """Constructs a `BertConfig` from a Python dictionary of parameters."""
         config = BertConfig(vocab_size_or_config_json_file=-1)
-        for key, value in json_object.items():
+        for key, value in list(json_object.items()):
             config.__dict__[key] = value
         return config
 
@@ -303,8 +300,7 @@ except ImportError:
 
     class BertLayerNorm(nn.Module):
         def __init__(self, hidden_size, eps=1e-12):
-            """Construct a layernorm module in the TF style (epsilon inside the square root).
-            """
+            """Construct a layernorm module in the TF style (epsilon inside the square root)."""
             super(BertLayerNorm, self).__init__()
             self.weight = nn.Parameter(torch.ones(hidden_size))
             self.bias = nn.Parameter(torch.zeros(hidden_size))
@@ -318,8 +314,7 @@ except ImportError:
 
 
 class BertEmbeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings.
-    """
+    """Construct the embeddings from word, position and token_type embeddings."""
 
     def __init__(self, config):
         super(BertEmbeddings, self).__init__()
@@ -491,7 +486,7 @@ class BertIntermediate(nn.Module):
         super(BertIntermediate, self).__init__()
         self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -652,7 +647,7 @@ class BertImageIntermediate(nn.Module):
         super(BertImageIntermediate, self).__init__()
         self.dense = nn.Linear(config.v_hidden_size, config.v_intermediate_size)
         if isinstance(config.v_hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.v_hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.v_hidden_act, str)
         ):
             self.intermediate_act_fn = ACT2FN[config.v_hidden_act]
         else:
@@ -1142,7 +1137,7 @@ class BertPredictionHeadTransform(nn.Module):
         super(BertPredictionHeadTransform, self).__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -1161,7 +1156,7 @@ class BertImgPredictionHeadTransform(nn.Module):
         super(BertImgPredictionHeadTransform, self).__init__()
         self.dense = nn.Linear(config.v_hidden_size, config.v_hidden_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -1259,8 +1254,8 @@ class BertImagePredictionHead(nn.Module):
 
 
 class BertPreTrainedModel(PreTrainedModel):
-    """ An abstract class to handle weights initialization and
-        a simple interface for dowloading and loading pretrained models.
+    """An abstract class to handle weights initialization and
+    a simple interface for dowloading and loading pretrained models.
     """
 
     config_class = BertConfig
@@ -1272,8 +1267,7 @@ class BertPreTrainedModel(PreTrainedModel):
         super(BertPreTrainedModel, self).__init__(*inputs, **kwargs)
 
     def init_weights(self, module):
-        """ Initialize the weights.
-        """
+        """Initialize the weights."""
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
@@ -1407,8 +1401,7 @@ class BertModel(BertPreTrainedModel):
 
 
 class BertImageEmbeddings(nn.Module):
-    """Construct the embeddings from image, spatial location (omit now) and token_type embeddings.
-    """
+    """Construct the embeddings from image, spatial location (omit now) and token_type embeddings."""
 
     def __init__(self, config):
         super(BertImageEmbeddings, self).__init__()
@@ -1433,8 +1426,7 @@ class BertImageEmbeddings(nn.Module):
 
 
 class BertForMultiModalPreTraining(BertPreTrainedModel):
-    """BERT model with multi modal pre-training heads.
-    """
+    """BERT model with multi modal pre-training heads."""
 
     def __init__(self, config):
         super(BertForMultiModalPreTraining, self).__init__(config)
@@ -1449,7 +1441,7 @@ class BertForMultiModalPreTraining(BertPreTrainedModel):
         self.num_negative = config.num_negative
         self.loss_fct = CrossEntropyLoss(ignore_index=-1)
 
-        print("model's visual target is ", config.visual_target)
+        print(("model's visual target is ", config.visual_target))
 
         if self.visual_target == 0:
             self.vis_criterion = nn.KLDivLoss(reduction="none")
@@ -1461,8 +1453,8 @@ class BertForMultiModalPreTraining(BertPreTrainedModel):
         self.tie_weights()
 
     def tie_weights(self):
-        """ Make sure we are sharing the input and output embeddings.
-            Export to TorchScript can't handle parameter sharing so we are cloning them instead.
+        """Make sure we are sharing the input and output embeddings.
+        Export to TorchScript can't handle parameter sharing so we are cloning them instead.
         """
         self._tie_or_clone_weights(
             self.cls.predictions.decoder, self.bert.embeddings.word_embeddings
@@ -1483,7 +1475,13 @@ class BertForMultiModalPreTraining(BertPreTrainedModel):
         output_all_attention_masks=False,
     ):
         # in this model, we first embed the images.
-        sequence_output_t, sequence_output_v, pooled_output_t, pooled_output_v, all_attention_mask = self.bert(
+        (
+            sequence_output_t,
+            sequence_output_v,
+            pooled_output_t,
+            pooled_output_v,
+            all_attention_mask,
+        ) = self.bert(
             input_ids,
             image_feat,
             image_loc,
@@ -1628,8 +1626,8 @@ class VILBertForVLTasks(BertPreTrainedModel):
         self.tie_weights()
 
     def tie_weights(self):
-        """ Make sure we are sharing the input and output embeddings.
-            Export to TorchScript can't handle parameter sharing so we are cloning them instead.
+        """Make sure we are sharing the input and output embeddings.
+        Export to TorchScript can't handle parameter sharing so we are cloning them instead.
         """
         self._tie_or_clone_weights(
             self.cls.predictions.decoder, self.bert.embeddings.word_embeddings
@@ -1649,7 +1647,13 @@ class VILBertForVLTasks(BertPreTrainedModel):
         output_all_attention_masks=False,
     ):
 
-        sequence_output_t, sequence_output_v, pooled_output_t, pooled_output_v, all_attention_mask = self.bert(
+        (
+            sequence_output_t,
+            sequence_output_v,
+            pooled_output_t,
+            pooled_output_v,
+            all_attention_mask,
+        ) = self.bert(
             input_txt,
             input_imgs,
             image_loc,

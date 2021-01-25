@@ -319,6 +319,7 @@ def main():
         objective=args.objective,
         cache=cache,
     )
+    train_shuffle_dataset = ShuffleDataset(train_dataset, args.path_length)
 
     validation_dataset = ConceptCapLoaderVal(
         args.file_path,
@@ -330,6 +331,7 @@ def main():
         num_workers=2,
         objective=args.objective,
     )
+    val_shuffle_dataset = ShuffleDataset(val_dataset, args.path_length)
 
     num_train_optimization_steps = int(
         train_dataset.num_dataset

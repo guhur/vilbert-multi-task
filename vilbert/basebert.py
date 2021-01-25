@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import copy
 import json
@@ -20,7 +19,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
-from vilbert.utils import cached_path
+from .vilbert.utils import cached_path
 from pytorch_transformers.modeling_bert import BertConfig
 import pdb
 from torch.nn.utils.weight_norm import weight_norm
@@ -45,9 +44,9 @@ TF_WEIGHTS_NAME = "model.ckpt"
 
 def gelu(x):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+    0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    Also see https://arxiv.org/abs/1606.08415
     """
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
@@ -68,8 +67,7 @@ except ImportError:
 
     class BertLayerNorm(nn.Module):
         def __init__(self, hidden_size, eps=1e-12):
-            """Construct a layernorm module in the TF style (epsilon inside the square root).
-            """
+            """Construct a layernorm module in the TF style (epsilon inside the square root)."""
             super(BertLayerNorm, self).__init__()
             self.weight = nn.Parameter(torch.ones(hidden_size))
             self.bias = nn.Parameter(torch.zeros(hidden_size))
@@ -83,8 +81,8 @@ except ImportError:
 
 
 class BertPreTrainedModel(nn.Module):
-    """ An abstract class to handle weights initialization and
-        a simple interface for dowloading and loading pretrained models.
+    """An abstract class to handle weights initialization and
+    a simple interface for dowloading and loading pretrained models.
     """
 
     def __init__(self, config, *inputs, **kwargs):
@@ -102,8 +100,7 @@ class BertPreTrainedModel(nn.Module):
         self.config = config
 
     def init_bert_weights(self, module):
-        """ Initialize the weights.
-        """
+        """Initialize the weights."""
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
@@ -168,7 +165,7 @@ class BertPreTrainedModel(nn.Module):
                 "We assumed '{}' was a path or url but couldn't find any file "
                 "associated to this path or url.".format(
                     pretrained_model_name_or_path,
-                    ", ".join(PRETRAINED_MODEL_ARCHIVE_MAP.keys()),
+                    ", ".join(list(PRETRAINED_MODEL_ARCHIVE_MAP.keys())),
                     archive_file,
                 )
             )
@@ -218,7 +215,7 @@ class BertPreTrainedModel(nn.Module):
         # Load from a PyTorch state_dict
         old_keys = []
         new_keys = []
-        for key in state_dict.keys():
+        for key in list(state_dict.keys()):
             new_key = None
             if "gamma" in key:
                 new_key = key.replace("gamma", "weight")
@@ -250,13 +247,13 @@ class BertPreTrainedModel(nn.Module):
                 unexpected_keys,
                 error_msgs,
             )
-            for name, child in module._modules.items():
+            for name, child in list(module._modules.items()):
                 if child is not None:
                     load(child, prefix + name + ".")
 
         start_prefix = ""
         if not hasattr(model, "bert") and any(
-            s.startswith("bert.") for s in state_dict.keys()
+            s.startswith("bert.") for s in list(state_dict.keys())
         ):
             start_prefix = "bert."
         load(model, prefix=start_prefix)
@@ -282,8 +279,7 @@ class BertPreTrainedModel(nn.Module):
 
 
 class BertEmbeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings.
-    """
+    """Construct the embeddings from word, position and token_type embeddings."""
 
     def __init__(self, config):
         super(BertEmbeddings, self).__init__()
@@ -322,8 +318,7 @@ class BertEmbeddings(nn.Module):
 
 
 class BertImageEmbeddings(nn.Module):
-    """Construct the embeddings from image, spatial location (omit now) and token_type embeddings.
-    """
+    """Construct the embeddings from image, spatial location (omit now) and token_type embeddings."""
 
     def __init__(self, config):
         super(BertImageEmbeddings, self).__init__()
@@ -445,7 +440,7 @@ class BertIntermediate(nn.Module):
         super(BertIntermediate, self).__init__()
         self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -524,7 +519,7 @@ class BertPredictionHeadTransform(nn.Module):
         super(BertPredictionHeadTransform, self).__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -584,7 +579,7 @@ class BertPredictionHeadTransform(nn.Module):
         super(BertPredictionHeadTransform, self).__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str) or (
-            sys.version_info[0] == 2 and isinstance(config.hidden_act, unicode)
+            sys.version_info[0] == 2 and isinstance(config.hidden_act, str)
         ):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:

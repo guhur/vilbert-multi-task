@@ -36,7 +36,7 @@ def _load_dataset(annotations_jsonpath, clean_datasets):
     if clean_datasets:
         remove_ids = np.load(os.path.join(dataroot, "cache", "genome_test_ids.npy"))
         remove_ids = [int(x) for x in remove_ids]
-    print("Loading dataset from %s" % annotations_jsonpath)
+    print(("Loading dataset from %s" % annotations_jsonpath))
     annotations = json.load(open(annotations_jsonpath, "r"))["data"]
     print("Finish loading ...")
     for i, dialog in enumerate(annotations["dialogs"]):

@@ -100,7 +100,7 @@ class RetreivalDataset(Dataset):
                     os.path.join(dataroot, "hard_negative" + clean_train + ".pkl"), "rb"
                 )
             )
-            for key, value in image_info.items():
+            for key, value in list(image_info.items()):
                 setattr(self, key, value)
             self.train_imgId2pool = {
                 imageId: i for i, imageId in enumerate(self.train_image_list)
@@ -132,7 +132,7 @@ class RetreivalDataset(Dataset):
             self.tensorize()
             cPickle.dump(self._entries, open(cache_path, "wb"))
         else:
-            print("loading entries from %s" % (cache_path))
+            print(("loading entries from %s" % (cache_path)))
             self._entries = cPickle.load(open(cache_path, "rb"))
 
     def tokenize(self):

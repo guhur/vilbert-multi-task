@@ -45,7 +45,7 @@ def get_neighbors(image_list, image_feature, kdt):
                 image_feature[index : index + 1], k=100, return_distance=False
             )
             hard_pool[index] = ind
-            print("finish worker", index)
+            print(("finish worker", index))
 
     return hard_pool
 
@@ -63,7 +63,7 @@ with jsonlines.open(inputJson) as reader:
         train_image_list.append(int(annotation["img_path"].split(".")[0]))
 
 num_train = len(train_image_list)
-print(len(train_image_list))
+print((len(train_image_list)))
 
 train_image_feature = pymp.shared.array([num_train, 2048])
 
@@ -75,7 +75,7 @@ with pymp.Parallel(40) as p:
             num_boxes = int(features_h5["num_boxes"][index])
             feature = features_h5["features"][index]
             train_image_feature[i] = feature[:num_boxes].sum(0) / num_boxes
-            print("finish worker", i)
+            print(("finish worker", i))
 
 kdt = BallTree(train_image_feature[:, :], metric="euclidean")
 print("finish create the ball tree")

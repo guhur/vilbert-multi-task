@@ -127,7 +127,7 @@ class GuessWhatPointingDataset(Dataset):
             self.tensorize()
             cPickle.dump(self.entries, open(cache_path, "wb"))
         else:
-            print("loading entries from %s" % (cache_path))
+            print(("loading entries from %s" % (cache_path)))
             self.entries = cPickle.load(open(cache_path, "rb"))
 
     def _load_annotations(self, clean_datasets):
@@ -258,9 +258,12 @@ class GuessWhatPointingDataset(Dataset):
         boxes = boxes[:num_boxes]
         features = features[:num_boxes]
 
-        gt_features, gt_num_boxes, gt_boxes, gt_boxes_ori = self._gt_image_features_reader[
-            image_id
-        ]
+        (
+            gt_features,
+            gt_num_boxes,
+            gt_boxes,
+            gt_boxes_ori,
+        ) = self._gt_image_features_reader[image_id]
 
         # merge two boxes, and assign the labels.
         gt_boxes_ori = gt_boxes_ori[1:gt_num_boxes]

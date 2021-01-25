@@ -303,9 +303,15 @@ def main():
             print("\n", file=f)
             print(config, file=f)
 
-    task_batch_size, task_num_iters, task_ids, task_datasets_train, task_datasets_val, task_dataloader_train, task_dataloader_val = LoadDatasets(
-        args, task_cfg, args.tasks.split("-")
-    )
+    (
+        task_batch_size,
+        task_num_iters,
+        task_ids,
+        task_datasets_train,
+        task_datasets_val,
+        task_dataloader_train,
+        task_dataloader_val,
+    ) = LoadDatasets(args, task_cfg, args.tasks.split("-"))
 
     logdir = os.path.join(savePath, "logs")
     tbLogger = utils.tbLogger(
