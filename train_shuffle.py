@@ -2,32 +2,27 @@
 
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
+from typing import Tuple, List, Dict
+import copy
 import argparse
 import json
 import logging
 import os
 import random
 from io import open
-import math
 import sys
 
-from time import gmtime, strftime
-from timeit import default_timer as timer
 
 import numpy as np
 from tqdm import tqdm, trange
 
 import torch
-from torch.utils.data import DataLoader, Dataset, RandomSampler
-from torch.utils.data.distributed import DistributedSampler
-from tensorboardX import SummaryWriter
 
-from pytorch_transformers.tokenization_bert import BertTokenizer
-from pytorch_transformers.optimization import AdamW, WarmupLinearSchedule
+from transformers import BertTokenizer
+from transformers import AdamW, get_linear_schedule_with_warmup
 
 import vilbert.utils as utils
-from vilbert.datasets import ConceptCapLoaderTrain, ConceptCapLoaderVal
+from vilbert.datasets.airbnb_dataset import AirbnbLoaderTrain, AirbnbLoaderVal
 from vilbert.vilbert import BertForMultiModalPreTraining, BertConfig
 import torch.distributed as dist
 
@@ -39,6 +34,73 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def _add(a: torch.Tensor, b: torch.Tensor):
+    return torch.cat([a, b.to(dtype=a.dtype, device=a.device)])
+
+def shuffling(batch: Tuple[torch.Tensor, ...], shuffle_length: int) -> Tuple[torch.Tensor, ...]:
+    (
+        input_ids,
+        input_mask,
+        segment_ids,
+        lm_label_ids,
+        is_next,
+        image_feat,
+        image_loc,
+        image_target,
+        image_label,
+        image_mask,
+    ) = batch
+    assert (is_next == True).all()
+
+    batch_size = input_ids.shape[0]
+    is_shuffled = torch.rand_like(is_next)
+    device = is_next.device
+
+    # concatenate into a sequence
+    seq_input_ids = torch.tensor([]).to(device)
+    seq_input_mask = torch.tensor([]).to(device)
+    seq_segment_ids = torch.tensor([]).to(device)
+    seq_lm_label_ids = torch.tensor([]).to(device)
+    seq_image_feat = torch.tensor([]).to(device)
+    seq_image_loc = torch.tensor([]).to(device)
+    seq_image_target = torch.tensor([]).to(device)
+    seq_image_label = torch.tensor([]).to(device)
+    seq_image_mask = torch.tensor([]).to(device)
+
+
+    for shuffled in is_shuffled.tolist():
+        weights = torch.full_like(is_next, 1 / batch_size)
+        indices = torch.multinomial(weights, shuffle_length, replacement=False)
+
+        if shuffled:
+            idx = torch.randperm(indices.nelement())
+            indices2 = indices.view(-1)[idx].view(indices.size())
+        else: 
+            indices2 = indices
+
+        seq_input_ids = _add(seq_input_ids, input_ids[indices])
+        seq_input_mask = _add(seq_input_mask, input_mask[indices])
+        seq_segment_ids = _add(seq_segment_ids, segment_ids[indices])
+        seq_lm_label_ids = _add(seq_lm_label_ids, lm_label_ids[indices])
+        seq_image_feat = _add(seq_image_feat, image_feat[indices2])
+        seq_image_loc = _add(seq_image_loc, image_loc[indices2])
+        seq_image_target = _add(seq_image_target, image_target[indices2])
+        seq_image_label = _add(seq_image_label, image_label[indices2])
+        seq_image_mask = _add(seq_image_mask, image_mask[indices2])
+
+    
+    return (
+        seq_input_ids,
+        seq_input_mask,
+        seq_segment_ids,
+        seq_lm_label_ids,
+        is_shuffled,
+        seq_image_feat,
+        seq_image_loc,
+        seq_image_target,
+        seq_image_label,
+        seq_image_mask,
+    )
 
 def main():
     parser = argparse.ArgumentParser()
@@ -46,7 +108,7 @@ def main():
     # Required parameters
     parser.add_argument(
         "--file_path",
-        default="data/conceptual_caption/",
+        default="data/airbnb/",
         type=str,
         help="The input train corpus.",
     )
@@ -85,6 +147,18 @@ def main():
         help="The maximum total input sequence length after WordPiece tokenization. \n"
         "Sequences longer than this will be truncated, and sequences shorter \n"
         "than this will be padded.",
+    )
+    parser.add_argument(
+        "--max_shuffle_length",
+        default=7,
+        type=int,
+        help="Max length of the shuffling"
+    )
+    parser.add_argument(
+        "--min_shuffle_length",
+        default=5,
+        type=int,
+        help="Min length of the shuffling"
     )
     parser.add_argument(
         "--train_batch_size",
@@ -207,7 +281,7 @@ def main():
 
     parser.add_argument(
         "--objective",
-        default=0,
+        default=2,
         type=int,
         help="which objective to use \
         0: with ICA loss, \
@@ -226,6 +300,7 @@ def main():
     )
 
     args = parser.parse_args()
+    assert args.objective == 2
 
     if args.baseline:
         from pytorch_pretrained_bert.modeling import BertConfig
@@ -307,7 +382,7 @@ def main():
         args.bert_model, do_lower_case=args.do_lower_case
     )
     num_train_optimization_steps = None
-    train_dataset = ConceptCapLoaderTrain(
+    train_dataset = AirbnbLoaderTrain(
         args.file_path,
         tokenizer,
         args.bert_model,
@@ -319,9 +394,8 @@ def main():
         objective=args.objective,
         cache=cache,
     )
-    train_shuffle_dataset = ShuffleDataset(train_dataset, args.path_length)
 
-    validation_dataset = ConceptCapLoaderVal(
+    validation_dataset = AirbnbLoaderVal(
         args.file_path,
         tokenizer,
         args.bert_model,
@@ -331,7 +405,6 @@ def main():
         num_workers=2,
         objective=args.objective,
     )
-    val_shuffle_dataset = ShuffleDataset(val_dataset, args.path_length)
 
     num_train_optimization_steps = int(
         train_dataset.num_dataset
@@ -471,10 +544,10 @@ def main():
             betas=(0.9, 0.98),
         )
 
-    scheduler = WarmupLinearSchedule(
+    scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        warmup_steps=args.warmup_proportion * num_train_optimization_steps,
-        t_total=num_train_optimization_steps,
+        num_warmup_steps=args.warmup_proportion * num_train_optimization_steps,
+        num_training_steps=num_train_optimization_steps,
     )
 
     startIterID = 0
@@ -529,6 +602,9 @@ def main():
             iterId = startIterID + step + (epochId * len(train_dataset))
             image_ids = batch[-1]
             batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch[:-1])
+
+            shuffle_length = random.randint(args.min_shuffle_length, args.max_shuffle_length)
+            batch, is_shuffled = shuffling(batch, shuffle_length)
 
             (
                 input_ids,
